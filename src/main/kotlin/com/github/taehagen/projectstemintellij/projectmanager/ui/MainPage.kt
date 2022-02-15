@@ -8,6 +8,12 @@ class MainPage(state: UiState) : Page(state) {
         return panel {
             row("Name: ") {
                 label(state.user!!.name)
+                button("Logout") {
+                    state.user = null
+                }
+            }
+            row {
+
             }
         }
     }

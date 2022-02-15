@@ -7,6 +7,14 @@ import com.intellij.openapi.wm.ToolWindow
 
 
 class UiState(val project: Project, val toolWindow: ToolWindow) : Stateful() {
+    var loading = false
+        set(value) {
+            field = value
+            stateChanged()
+        }
+
+    var loginError: String = "";
+
     var user: User? = null
         set(value) {
             field = value

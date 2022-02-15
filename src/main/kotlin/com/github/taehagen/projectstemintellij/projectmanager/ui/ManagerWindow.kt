@@ -23,6 +23,10 @@ class ManagerWindow(val project: Project, val toolWindow: ToolWindow) {
     }
 
     fun updatePage() {
+        if (uiState.loading) {
+            page = Loading(uiState)
+            return
+        }
         if (uiState.user == null) {
             page = LoginPage(uiState)
             return
