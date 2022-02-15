@@ -24,6 +24,12 @@ repositories {
     mavenCentral()
 }
 
+dependencies {
+    implementation("com.squareup.okhttp3:okhttp:4.9.1")
+    implementation("org.json:json:20211205")
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.6.10")
+}
+
 // Configure Gradle IntelliJ Plugin - read more: https://github.com/JetBrains/gradle-intellij-plugin
 intellij {
     pluginName.set(properties("pluginName"))

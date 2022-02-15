@@ -9,6 +9,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="com.github.taehagen.projectstemintellij.services.MyApplicationService"/>
         <projectService serviceImplementation="com.github.taehagen.projectstemintellij.services.MyProjectService"/>
+        <toolWindow factoryClass="com.github.taehagen.projectstemintellij.projectmanager.ui.ManagerFactory" id="Project Stem" />
     </extensions>
 
     <applicationListeners>
