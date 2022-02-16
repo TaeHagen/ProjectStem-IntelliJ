@@ -9,7 +9,8 @@
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="com.github.taehagen.projectstemintellij.services.MyApplicationService"/>
         <projectService serviceImplementation="com.github.taehagen.projectstemintellij.services.MyProjectService"/>
-        <toolWindow factoryClass="com.github.taehagen.projectstemintellij.projectmanager.ui.ManagerFactory" id="Project Stem" />
+        <toolWindow factoryClass="com.github.taehagen.projectstemintellij.projectmanager.ui.ManagerFactory" id="Course" />
+        <toolWindow factoryClass="com.github.taehagen.projectstemintellij.projectmanager.ui.ItemViewFactory" id="Item View" />
     </extensions>
 
     <applicationListeners>
