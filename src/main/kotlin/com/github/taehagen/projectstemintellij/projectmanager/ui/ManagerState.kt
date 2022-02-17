@@ -14,10 +14,4 @@ class ManagerState(val project: Project, val toolWindow: ToolWindow) : Stateful(
         }
 
     var loginError: String = "";
-
-    val projectManager = ProjectManager(project)
-
-    init {
-        projectManager.addStateChangeListener { stateChanged() }
-    }
 }

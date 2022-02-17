@@ -81,7 +81,6 @@ object Remote {
             val json = JSONArray(res.body!!.string())
             (0 until json.length()).forEach {
                 val model = json.getJSONObject(it)
-                print(model.toString())
                 items.add(
                     Item(
                         model.getInt("id"),
@@ -91,6 +90,7 @@ object Remote {
                         model.getInt("indent"),
                         if (model.has("completion_requirement")) model.getJSONObject("completion_requirement")
                             .getBoolean("completed") else true,
+                        if (model.has("content_id")) model.getInt("content_id") else -1,
                         module
                     )
                 )
@@ -100,5 +100,19 @@ object Remote {
             page++
         }
         return true
+    }
+
+    fun getDetails(token: String, item: Item) {
+        val req = Request.Builder()
+            .url("https://courses.projectstem.org/api/v1/courses/${item.module.course.id}/assignments/${item.contentId}")
+            .header("cookie", "_normandy_session=$token")
+            .header("accept", "application/json")
+            .build();
+        val res = client.newCall(req).execute()
+        if (res.code != 200) {
+            return
+        }
+        val json = JSONObject(res.body!!.string())
+        item.description = json.getString("description")
     }
 }

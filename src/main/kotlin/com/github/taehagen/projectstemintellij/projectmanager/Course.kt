@@ -2,9 +2,12 @@ package com.github.taehagen.projectstemintellij.projectmanager
 
 class Course(val id: Int, val name: String) {
     val modules = ArrayList<Module>()
-    fun getModules() {
+    fun getModules(refresh: Boolean = false): ArrayList<Module> {
+        if (modules.size != 0 && !refresh)
+            return modules
         modules.clear()
         Remote.getModules(AuthState.user!!.token, this, modules)
+        return modules
     }
 
     /**

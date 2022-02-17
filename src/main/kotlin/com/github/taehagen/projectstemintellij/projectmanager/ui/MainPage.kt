@@ -5,6 +5,7 @@ import com.github.taehagen.projectstemintellij.projectmanager.Course
 import com.github.taehagen.projectstemintellij.projectmanager.Item
 import com.github.taehagen.projectstemintellij.projectmanager.Module
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.gridLayout.HorizontalAlign
@@ -20,10 +21,13 @@ import javax.swing.tree.DefaultTreeModel
 
 class CourseTreeNode(text: String, val data: Any) : DefaultMutableTreeNode(text) {}
 
-class MainPage(state: ManagerState) : Page(state.toolWindow) {
+class MainPage(val state: ManagerState) : Page(state.toolWindow) {
     fun updateItems(selected: CourseTreeNode) {
         val data = selected.data
         if (data is Course) {
+            if (selected.childCount == data.modules.size)
+                return
+            selected.removeAllChildren()
             for (module in data.modules) {
                 val node = CourseTreeNode(module.name, module)
                 updateItems(node)
@@ -31,6 +35,9 @@ class MainPage(state: ManagerState) : Page(state.toolWindow) {
             }
         }
         if (data is Module) {
+            if (selected.childCount == data.items.size)
+                return
+            selected.removeAllChildren()
             for (item in data.items) {
                 val node = CourseTreeNode("${"    ".repeat(item.indent)}${item.title}", item)
                 updateItems(node)
@@ -66,9 +73,9 @@ class MainPage(state: ManagerState) : Page(state.toolWindow) {
                     }
                     val selectItem = { selected: CourseTreeNode ->
                         val data = selected.data
-                        if (data is Course && data.modules.size == 0)
+                        if (data is Course)
                             updateAndReload(selected) { data.getModules() }
-                        if (data is Module && data.items.size == 0)
+                        if (data is Module)
                             updateAndReload(selected) { data.getItems() }
                     }
                     tree.addTreeSelectionListener {
@@ -82,8 +89,10 @@ class MainPage(state: ManagerState) : Page(state.toolWindow) {
                                 if (tree.lastSelectedPathComponent == null)
                                     return
                                 val data = (tree.lastSelectedPathComponent as CourseTreeNode).data
-                                if (data is Item)
+                                if (data is Item) {
                                     UiState.projectManager.selectedItem = data
+                                    ToolWindowManager.getInstance(state.project).getToolWindow("Course")?.show(null)
+                                }
                             }
                         }
                     }
