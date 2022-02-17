@@ -3,14 +3,17 @@ package com.github.taehagen.projectstemintellij.projectmanager
 class Item(val id: Int, val title: String, val type: String, val url: String?, val indent: Int, val completed: Boolean, val contentId: Int, val module: Module) {
 
     var description: String = "Loading"
-    fun getDetails(reload: Boolean = false) {
-        if (description != "Loading" && !reload)
+    val files = ArrayList<File>()
+
+    fun getDetails(refresh: Boolean = false) {
+        if (description != "Loading" && !refresh)
             return
         if (type != "Assignment") {
             description = "<a href=\"${url}\" target=\"_blank\">View content</a>"
             return
         }
-        Remote.getDetails(AuthState.user!!.token, this)
+        if (url == null) return
+        PageParser.parseAssignment(url, AuthState.user!!.token, this)
     }
 
     /**

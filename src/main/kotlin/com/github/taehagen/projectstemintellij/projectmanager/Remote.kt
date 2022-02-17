@@ -101,18 +101,4 @@ object Remote {
         }
         return true
     }
-
-    fun getDetails(token: String, item: Item) {
-        val req = Request.Builder()
-            .url("https://courses.projectstem.org/api/v1/courses/${item.module.course.id}/assignments/${item.contentId}")
-            .header("cookie", "_normandy_session=$token")
-            .header("accept", "application/json")
-            .build();
-        val res = client.newCall(req).execute()
-        if (res.code != 200) {
-            return
-        }
-        val json = JSONObject(res.body!!.string())
-        item.description = json.getString("description")
-    }
 }

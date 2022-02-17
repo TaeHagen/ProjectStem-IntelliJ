@@ -102,7 +102,11 @@ class ItemViewPage(val project: Project, val toolWindow: ToolWindow) : Page(tool
         UiState.runOnIoThread {
             item.getDetails()
             return@runOnIoThread {
-                label.text = processHtml(item.description)
+                if (UiState.projectManager.selectedItem == item) {
+                    // we've not selected something else
+                    label.text = processHtml(item.description)
+                    UiState.projectManager.openFiles()
+                }
             }
         }
         panel.updateUI()
