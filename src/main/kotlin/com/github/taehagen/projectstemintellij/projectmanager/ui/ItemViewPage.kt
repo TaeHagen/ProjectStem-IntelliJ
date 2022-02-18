@@ -25,6 +25,7 @@ import javax.swing.event.HyperlinkEvent
 class ItemViewPage(val project: Project, val toolWindow: ToolWindow) : Page(toolWindow) {
 
     val panel = JPanel()
+    val submissionPanel = JPanel()
     lateinit var item: Item
 
     fun processHtml(data: String): String {
@@ -83,6 +84,63 @@ class ItemViewPage(val project: Project, val toolWindow: ToolWindow) : Page(tool
         }
     }
 
+    fun updateSubmissions() {
+        submissionPanel.removeAll()
+        submissionPanel.layout = GridLayout(0, 1)
+        val submission = item.submission ?: return
+        if (submission.error != null) {
+            submissionPanel.add(panel {
+                group("Error") {
+                    row {
+                        label(submission.error!!)
+                    }
+                }
+            })
+            return
+        }
+        submissionPanel.add(panel {
+            var idx = 0
+            for ((index, result) in submission.results.withIndex()) {
+                collapsibleGroup("Test ${index+1} - ${if (result.passed) "Pass" else "Fail"}") {
+                    row {
+                        comment("Description")
+                    }
+                    row {
+                        label(result.description)
+                    }
+                    row {
+                        comment("Message")
+                    }
+                    row {
+                        label(if (result.passed) "Correct!" else result.debug_hint)
+                    }
+                    if (result.examples.size > 0) {
+                        row {
+                            comment("Results")
+                        }
+                    }
+                    for (test in result.examples) {
+                        group {
+                            row {
+                                comment("Expected")
+                            }
+                            row {
+                                label(test.expected)
+                            }
+                            row {
+                                comment("Found")
+                            }
+                            row {
+                                label(test.found)
+                            }
+                        }
+                    }
+                }
+                idx++
+            }
+        })
+    }
+
     fun updateContent() {
         panel.removeAll()
         val item = UiState.projectManager.selectedItem
@@ -120,6 +178,9 @@ class ItemViewPage(val project: Project, val toolWindow: ToolWindow) : Page(tool
                     }
                 }
             }
+            row {
+                cell(submissionPanel)
+            }
         })
         label.isEditable = false
         label.border = null
@@ -137,6 +198,7 @@ class ItemViewPage(val project: Project, val toolWindow: ToolWindow) : Page(tool
                     // we've not selected something else
                     label.text = processHtml(item.description)
                     UiState.projectManager.openFiles()
+                    updateSubmissions()
                 }
             }
         }

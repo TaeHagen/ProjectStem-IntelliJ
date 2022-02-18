@@ -14,6 +14,7 @@ class Item(val id: Int,
     var problem_id: Int = -1
     var lti_course_id: String = ""
     var lti_user_id: String = ""
+    var submission: Submission? = null
 
     fun getDetails(refresh: Boolean = false) {
         if (description != "Loading" && !refresh)

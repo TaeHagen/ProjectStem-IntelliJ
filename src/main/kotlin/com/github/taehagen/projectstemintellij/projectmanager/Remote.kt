@@ -1,10 +1,8 @@
 package com.github.taehagen.projectstemintellij.projectmanager
 
-import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
@@ -104,6 +102,26 @@ object Remote {
             page++
         }
         return true
+    }
+
+    fun parseSubmission(data: JSONObject, sub: Submission) {
+        sub.id = data.getInt("id")
+        sub.grade = data.getInt("grade")
+        sub.status = data.getString("status")
+        val result = data.getJSONObject("response").getJSONObject("result")
+        sub.error = if (result.getJSONArray("errors").length() > 0) result.getJSONArray("errors").getJSONObject(0).getString("error") else null
+        val arr = result.getJSONArray("datasets")
+        sub.results.clear()
+        (0 until arr.length()).forEach { idx ->
+            val dataset = arr.getJSONObject(idx)
+            val results = ArrayList<GraderExample>()
+            val resultsJson = dataset.getJSONArray("results")
+            (0 until resultsJson.length()).forEach { results_idx ->
+                val resultJson = resultsJson.getJSONObject(results_idx)
+                results.add(GraderExample(resultJson.getString("expected"), resultJson.getString("found")))
+            }
+            sub.results.add(GraderResult(dataset.getString("description"), dataset.getString("debug_hint"), dataset.getBoolean("passed"), results))
+        }
     }
 
     fun updateFiles(token: String, item: Item) {

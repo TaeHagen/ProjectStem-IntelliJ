@@ -36,5 +36,12 @@ object PageParser {
             val file = files.getJSONObject(it)
             item.files.add(File(file.getInt("id"), file.getString("name"), file.getString("content"), file.getInt("id") == currentFile))
         }
+        if (json.isNull("submission")) {
+            item.submission = null
+        } else {
+            val sub = Submission()
+            Remote.parseSubmission(json.getJSONObject("submission"), sub)
+            item.submission = sub
+        }
     }
 }
