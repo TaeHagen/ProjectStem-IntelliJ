@@ -3,6 +3,9 @@ package com.github.taehagen.projectstemintellij.projectmanager.ui
 import com.github.taehagen.projectstemintellij.DesktopApi
 import com.github.taehagen.projectstemintellij.projectmanager.AuthState
 import com.github.taehagen.projectstemintellij.projectmanager.Item
+import com.intellij.notification.NotificationGroupManager
+import com.intellij.notification.NotificationType
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.ui.components.JBScrollPane
@@ -43,20 +46,39 @@ class ItemViewPage(val project: Project, val toolWindow: ToolWindow) : Page(tool
     }
 
     fun next() {
-        UiState.runOnIoThread {
-            val next = item.next()
-            return@runOnIoThread {
-                UiState.projectManager.selectedItem = next
+        save {
+            UiState.runOnIoThread {
+                val next = item.next()
+                return@runOnIoThread {
+                    UiState.projectManager.selectedItem = next
+                }
             }
         }
     }
     fun prev() {
+        save {
+            UiState.runOnIoThread {
+                var next = item.prev()
+                while (next != null && !canDisplay(next))
+                    next = next.prev()
+                return@runOnIoThread {
+                    UiState.projectManager.selectedItem = next
+                }
+            }
+        }
+    }
+
+    fun save(success: () -> Unit) {
+        FileDocumentManager.getInstance().saveAllDocuments()
         UiState.runOnIoThread {
-            var next = item.prev()
-            while (next != null && !canDisplay(next))
-                next = next.prev()
+            val status = UiState.projectManager.saveFiles()
             return@runOnIoThread {
-                UiState.projectManager.selectedItem = next
+                if (status)
+                    success()
+                else
+                    NotificationGroupManager.getInstance().getNotificationGroup("Status")
+                        .createNotification("Error saving... don't close IDE", NotificationType.ERROR)
+                        .notify(project)
             }
         }
     }
@@ -89,6 +111,15 @@ class ItemViewPage(val project: Project, val toolWindow: ToolWindow) : Page(tool
             row {
                 cell(scroll).horizontalAlign(HorizontalAlign.FILL).verticalAlign(VerticalAlign.FILL)
             }.resizableRow()
+            row {
+                button("Save") {
+                    save {
+                        NotificationGroupManager.getInstance().getNotificationGroup("Status")
+                            .createNotification("Project saved!", NotificationType.INFORMATION)
+                            .notify(project)
+                    }
+                }
+            }
         })
         label.isEditable = false
         label.border = null

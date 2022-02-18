@@ -11,6 +11,7 @@
         <projectService serviceImplementation="com.github.taehagen.projectstemintellij.services.MyProjectService"/>
         <toolWindow factoryClass="com.github.taehagen.projectstemintellij.projectmanager.ui.ManagerFactory" id="Project Stem" />
         <toolWindow factoryClass="com.github.taehagen.projectstemintellij.projectmanager.ui.ItemViewFactory" id="Course" />
+        <notificationGroup id="Status" displayType="BALLOON"/>
     </extensions>
 
     <applicationListeners>

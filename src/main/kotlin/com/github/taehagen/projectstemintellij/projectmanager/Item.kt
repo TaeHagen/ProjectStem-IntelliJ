@@ -1,9 +1,19 @@
 package com.github.taehagen.projectstemintellij.projectmanager
 
-class Item(val id: Int, val title: String, val type: String, val url: String?, val indent: Int, val completed: Boolean, val contentId: Int, val module: Module) {
+class Item(val id: Int,
+           val title: String,
+           val type: String,
+           val url: String?,
+           val indent: Int,
+           val completed: Boolean,
+           val contentId: Int,
+           val module: Module) {
 
     var description: String = "Loading"
     val files = ArrayList<File>()
+    var problem_id: Int = -1
+    var lti_course_id: String = ""
+    var lti_user_id: String = ""
 
     fun getDetails(refresh: Boolean = false) {
         if (description != "Loading" && !refresh)
@@ -14,6 +24,14 @@ class Item(val id: Int, val title: String, val type: String, val url: String?, v
         }
         if (url == null) return
         PageParser.parseAssignment(url, AuthState.user!!.token, this)
+    }
+
+    fun updateFiles(): Boolean {
+        if (!files.any { it.dirty }) {
+            return true // no files dirty
+        }
+        Remote.updateFiles(AuthState.user!!.token, this)
+        return !files.any { it.dirty } // if files are still dirty, we failed.
     }
 
     /**

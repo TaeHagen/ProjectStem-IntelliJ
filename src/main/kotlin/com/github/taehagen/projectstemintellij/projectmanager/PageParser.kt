@@ -26,11 +26,15 @@ object PageParser {
         val data = runner.dataset()["props"]
         val json = JSONObject(data)
         item.description = json.getJSONObject("settings").getString("instructions")
+        item.problem_id = json.getJSONObject("settings").getInt("problem_id")
+        item.lti_course_id = json.getJSONObject("settings").getJSONObject("lti_params").getString("lti_course_id")
+        item.lti_user_id = json.getJSONObject("settings").getJSONObject("lti_params").getString("lti_user_id")
         item.files.clear()
         val files = json.getJSONArray("files")
+        val currentFile = json.getJSONObject("meta").getJSONObject("current_file").getInt("id")
         (0 until files.length()).forEach {
             val file = files.getJSONObject(it)
-            item.files.add(File(file.getInt("id"), file.getString("name"), file.getString("content")))
+            item.files.add(File(file.getInt("id"), file.getString("name"), file.getString("content"), file.getInt("id") == currentFile))
         }
     }
 }

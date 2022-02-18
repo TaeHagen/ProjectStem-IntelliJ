@@ -1,7 +1,11 @@
 package com.github.taehagen.projectstemintellij.projectmanager
 
+import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -100,5 +104,40 @@ object Remote {
             page++
         }
         return true
+    }
+
+    fun updateFiles(token: String, item: Item) {
+        val obj = JSONObject()
+        obj.put("lti_user_id", item.lti_user_id)
+        obj.put("lti_course_id", item.lti_course_id)
+        obj.put("problem_id", item.problem_id)
+        val files = JSONArray()
+        obj.put("files", files)
+        for (file in item.files) {
+            val fileobj = JSONObject()
+            fileobj.put("id", file.id)
+            fileobj.put("name", file.name)
+            fileobj.put("content", file.stagingContent)
+            fileobj.put("modified", file.content != file.stagingContent)
+            fileobj.put("disable_history", false)
+            files.put(fileobj)
+        }
+        val req = Request.Builder()
+            .url("https://coderunner.projectstem.org/api/v1/problem_files/update_all")
+            .header("accept", "application/json")
+            .post(obj.toString().toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull()))
+            .build();
+        val res = client.newCall(req).execute()
+        if (res.code != 200) {
+            return
+        }
+        val json = JSONObject(res.body!!.string())
+        val arr = json.getJSONArray("files")
+        (0 until arr.length()).forEach { idx ->
+            val file = arr.getJSONObject(idx)
+            val inputFile = item.files.find { it.name == file.getString("name") } ?: return@forEach // compare against name because id changes from -1 to an id when creating a file
+            inputFile.id = file.getInt("id")
+            inputFile.content = file.getString("content")
+        }
     }
 }
