@@ -6,6 +6,7 @@ import com.github.taehagen.projectstemintellij.projectmanager.Item
 import com.github.taehagen.projectstemintellij.projectmanager.Submission
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
@@ -87,23 +88,27 @@ class ItemViewPage(val project: Project, val toolWindow: ToolWindow) : Page(tool
     }
 
     val submissionInner = JPanel()
-    var currentSubmission: Submission? = null
 
     fun updateSubmissions() {
         submissionPanel.removeAll()
         submissionInner.removeAll()
         submissionPanel.layout = GridLayout(0, 1)
-        val submission = item.submission ?: return
+        val submission = item.submission
         val submitBtn = JButton("Check Code")
         submitBtn.addActionListener {
+            if (submission != null && submission.status == "submitting")
+                return@addActionListener
             submitBtn.text = "Checking code..."
             UiState.runOnIoThread {
-                currentSubmission = if (item.submit()) item.submission else null
+                item.submit()
                 return@runOnIoThread {
-                    if (currentSubmission == null)
-                        submitBtn.text = "Check Code"
+                    updateSubmissions()
                 }
             }
+        }
+        if (submission == null) {
+            submissionInner.add(submitBtn)
+            return
         }
         if (submission.error != null) {
             submissionPanel.add(panel {
@@ -113,6 +118,21 @@ class ItemViewPage(val project: Project, val toolWindow: ToolWindow) : Page(tool
                     }
                 }
             })
+            submissionInner.add(submitBtn)
+            return
+        }
+
+        if (submission.status == "submitting") {
+            submitBtn.text = "Checking code..."
+            Thread {
+                Thread.sleep(5000)
+                if (item.submission != null && item.submission?.status == "submitting") {
+                    item.submission?.checkSubmission()
+                    ApplicationManager.getApplication().invokeLater {
+                        updateSubmissions()
+                    }
+                }
+            }.start()
             submissionInner.add(submitBtn)
             return
         }
