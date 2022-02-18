@@ -3,6 +3,7 @@ package com.github.taehagen.projectstemintellij.projectmanager.ui
 import com.github.taehagen.projectstemintellij.DesktopApi
 import com.github.taehagen.projectstemintellij.projectmanager.AuthState
 import com.github.taehagen.projectstemintellij.projectmanager.Item
+import com.github.taehagen.projectstemintellij.projectmanager.Submission
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -16,6 +17,7 @@ import com.intellij.ui.layout.ComponentPredicate
 import java.awt.Color
 import java.awt.Desktop
 import java.awt.GridLayout
+import javax.swing.JButton
 import javax.swing.JEditorPane
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -84,10 +86,25 @@ class ItemViewPage(val project: Project, val toolWindow: ToolWindow) : Page(tool
         }
     }
 
+    val submissionInner = JPanel()
+    var currentSubmission: Submission? = null
+
     fun updateSubmissions() {
         submissionPanel.removeAll()
+        submissionInner.removeAll()
         submissionPanel.layout = GridLayout(0, 1)
         val submission = item.submission ?: return
+        val submitBtn = JButton("Check Code")
+        submitBtn.addActionListener {
+            submitBtn.text = "Checking code..."
+            UiState.runOnIoThread {
+                currentSubmission = if (item.submit()) item.submission else null
+                return@runOnIoThread {
+                    if (currentSubmission == null)
+                        submitBtn.text = "Check Code"
+                }
+            }
+        }
         if (submission.error != null) {
             submissionPanel.add(panel {
                 group("Error") {
@@ -96,8 +113,12 @@ class ItemViewPage(val project: Project, val toolWindow: ToolWindow) : Page(tool
                     }
                 }
             })
+            submissionInner.add(submitBtn)
             return
         }
+
+        submissionInner.add(JLabel("Score ${submission.grade}%"))
+        submissionInner.add(submitBtn)
         submissionPanel.add(panel {
             var idx = 0
             for ((index, result) in submission.results.withIndex()) {
@@ -177,6 +198,7 @@ class ItemViewPage(val project: Project, val toolWindow: ToolWindow) : Page(tool
                             .notify(project)
                     }
                 }
+                cell(submissionInner).horizontalAlign(HorizontalAlign.RIGHT)
             }
             row {
                 cell(submissionPanel)

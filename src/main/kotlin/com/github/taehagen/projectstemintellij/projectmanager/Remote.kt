@@ -106,8 +106,10 @@ object Remote {
 
     fun parseSubmission(data: JSONObject, sub: Submission) {
         sub.id = data.getInt("id")
-        sub.grade = data.getInt("grade")
         sub.status = data.getString("status")
+        if (sub.status == "submitting")
+            return
+        sub.grade = data.getInt("grade")
         val result = data.getJSONObject("response").getJSONObject("result")
         sub.error = if (result.getJSONArray("errors").length() > 0) result.getJSONArray("errors").getJSONObject(0).getString("error") else null
         val arr = result.getJSONArray("datasets")
@@ -124,7 +126,7 @@ object Remote {
         }
     }
 
-    fun updateFiles(token: String, item: Item) {
+    fun getSubmissionObj(item: Item): JSONObject {
         val obj = JSONObject()
         obj.put("lti_user_id", item.lti_user_id)
         obj.put("lti_course_id", item.lti_course_id)
@@ -140,6 +142,11 @@ object Remote {
             fileobj.put("disable_history", false)
             files.put(fileobj)
         }
+        return obj
+    }
+
+    fun updateFiles(token: String, item: Item) {
+        val obj = getSubmissionObj(item)
         val req = Request.Builder()
             .url("https://coderunner.projectstem.org/api/v1/problem_files/update_all")
             .header("accept", "application/json")
@@ -157,5 +164,37 @@ object Remote {
             inputFile.id = file.getInt("id")
             inputFile.content = file.getString("content")
         }
+    }
+
+    fun createSubmission(token: String, item: Item): Submission? {
+        val createItem = getSubmissionObj(item)
+        val req = Request.Builder()
+                .url("https://coderunner.projectstem.org/api/v1/submissions")
+                .header("accept", "application/json")
+                .post(createItem.toString().toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull()))
+                .build();
+        val res = client.newCall(req).execute()
+        if (res.code != 200) {
+            return null
+        }
+        val submission = Submission(item)
+        val json = JSONObject(res.body!!.string())
+        parseSubmission(json, submission)
+        item.submission = submission
+        return submission
+    }
+
+    fun checkSubmission(submission: Submission) {
+        val req = Request.Builder()
+                .url("https://coderunner.projectstem.org/api/v1/submissions/${submission.id}?problem_id=${submission.item.problem_id}&lti_course_id=${submission.item.lti_course_id}&lti_user_id=${submission.item.lti_user_id}")
+                .header("accept", "application/json")
+                .build()
+        val res = client.newCall(req).execute()
+        if (res.code != 200) {
+            return
+        }
+        val json = JSONObject(res.body!!.string())
+        parseSubmission(json, submission)
+        return
     }
 }

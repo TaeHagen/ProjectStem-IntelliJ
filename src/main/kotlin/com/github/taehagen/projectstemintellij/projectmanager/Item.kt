@@ -35,6 +35,13 @@ class Item(val id: Int,
         return !files.any { it.dirty } // if files are still dirty, we failed.
     }
 
+    fun submit(): Boolean {
+        if (!updateFiles())
+            return false
+        return Remote.createSubmission(AuthState.user!!.token, this) != null
+
+    }
+
     /**
      * Get next item
      * Blocking.

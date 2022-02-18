@@ -13,11 +13,15 @@ data class GraderResult (
 )
 
 // grade is number 0-100
-class Submission() {
+class Submission(val item: Item) {
     var id: Int = 0
     var status: String = ""
     var error: String? = null
     var results = ArrayList<GraderResult>()
     var grade: Int = 0
-
+    fun checkSubmission() {
+        if (status != "submitting")
+            return
+        Remote.checkSubmission(this)
+    }
 }

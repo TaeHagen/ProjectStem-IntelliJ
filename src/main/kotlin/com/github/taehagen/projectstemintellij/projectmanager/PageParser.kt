@@ -39,7 +39,7 @@ object PageParser {
         if (json.isNull("submission")) {
             item.submission = null
         } else {
-            val sub = Submission()
+            val sub = Submission(item)
             Remote.parseSubmission(json.getJSONObject("submission"), sub)
             item.submission = sub
         }
