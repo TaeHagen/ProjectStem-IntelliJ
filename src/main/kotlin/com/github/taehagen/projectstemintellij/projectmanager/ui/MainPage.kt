@@ -8,6 +8,8 @@ import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.dsl.builder.panel
@@ -24,7 +26,7 @@ import javax.swing.tree.DefaultTreeModel
 
 class CourseTreeNode(text: String, val data: Any) : DefaultMutableTreeNode(text) {}
 
-class MainPage(val state: ManagerState) : Page(state.toolWindow) {
+class MainPage(val project: Project, val toolWindow: ToolWindow) : Page(toolWindow) {
     fun updateItems(selected: CourseTreeNode) {
         val data = selected.data
         if (data is Course) {
@@ -56,6 +58,7 @@ class MainPage(val state: ManagerState) : Page(state.toolWindow) {
                 label(user.name)
                 button("Logout") {
                     AuthState.user = null
+                    UiState.projectManager.selectedItem = null
                 }.horizontalAlign(HorizontalAlign.RIGHT)
             }
             for (course in user.courses) {
@@ -101,12 +104,12 @@ class MainPage(val state: ManagerState) : Page(state.toolWindow) {
                                         return@runOnIoThread {
                                             if (status) {
                                                 UiState.projectManager.selectedItem = data
-                                                ToolWindowManager.getInstance(state.project).getToolWindow("Course")
+                                                ToolWindowManager.getInstance(project).getToolWindow("Course")
                                                     ?.show(null)
                                             } else
                                                 NotificationGroupManager.getInstance().getNotificationGroup("Status")
                                                     .createNotification("Error saving... don't close IDE", NotificationType.ERROR)
-                                                    .notify(state.project)
+                                                    .notify(project)
                                         }
                                     }
 

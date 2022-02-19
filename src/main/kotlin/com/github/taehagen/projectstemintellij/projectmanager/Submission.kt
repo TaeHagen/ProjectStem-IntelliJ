@@ -20,8 +20,22 @@ class Submission(val item: Item) {
     var results = ArrayList<GraderResult>()
     var grade: Int = 0
     fun checkSubmission() {
-        if (status != "submitting")
+        if (!isSubmitting())
             return
         Remote.checkSubmission(this)
+    }
+
+    fun isSubmitted(): Boolean {
+        return status == "graded"
+    }
+
+    fun isSubmitting(): Boolean {
+        return status == "submitting"
+    }
+
+    fun grade(): Boolean {
+        if (isSubmitted())
+            return true
+        return Remote.gradeSubmission(this)
     }
 }

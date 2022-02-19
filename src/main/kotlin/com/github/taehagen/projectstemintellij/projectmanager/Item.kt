@@ -1,5 +1,8 @@
 package com.github.taehagen.projectstemintellij.projectmanager
 
+import com.github.taehagen.projectstemintellij.Stateful
+import org.json.JSONObject
+
 class Item(val id: Int,
            val title: String,
            val type: String,
@@ -7,17 +10,22 @@ class Item(val id: Int,
            val indent: Int,
            val completed: Boolean,
            val contentId: Int,
-           val module: Module) {
+           val module: Module): Stateful() {
 
     var description: String = "Loading"
     val files = ArrayList<File>()
     var problem_id: Int = -1
     var lti_course_id: String = ""
     var lti_user_id: String = ""
+    var ltiparams: JSONObject = JSONObject()
     var submission: Submission? = null
 
+    fun hasDetails(): Boolean {
+        return description != "Loading"
+    }
+
     fun getDetails(refresh: Boolean = false) {
-        if (description != "Loading" && !refresh)
+        if (hasDetails() && !refresh)
             return
         if (type != "Assignment") {
             description = "<a href=\"${url}\" target=\"_blank\">View content</a>"
@@ -25,6 +33,7 @@ class Item(val id: Int,
         }
         if (url == null) return
         PageParser.parseAssignment(url, AuthState.user!!.token, this)
+        stateChanged()
     }
 
     fun updateFiles(): Boolean {
@@ -36,8 +45,6 @@ class Item(val id: Int,
     }
 
     fun submit(): Boolean {
-        if (!updateFiles())
-            return false
         return Remote.createSubmission(AuthState.user!!.token, this) != null
 
     }

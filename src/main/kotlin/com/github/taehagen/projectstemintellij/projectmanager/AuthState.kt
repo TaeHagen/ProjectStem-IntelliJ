@@ -8,4 +8,10 @@ object AuthState : Stateful() {
             field = value
             stateChanged()
         }
+
+    var loginInProgress: Boolean = true
+        set(value) {
+            field = value
+            stateChanged()
+        }
 }

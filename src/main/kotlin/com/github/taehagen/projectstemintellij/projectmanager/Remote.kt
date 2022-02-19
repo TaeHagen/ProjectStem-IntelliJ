@@ -105,12 +105,13 @@ object Remote {
     }
 
     fun parseSubmission(data: JSONObject, sub: Submission) {
-        sub.id = data.getInt("id")
-        sub.status = data.getString("status")
+        val submission = data.getJSONObject("submission")
+        sub.id = submission.getInt("id")
+        sub.status = submission.getString("status")
         if (sub.status == "submitting")
             return
-        sub.grade = data.getInt("grade")
-        val result = data.getJSONObject("response").getJSONObject("result")
+        sub.grade = submission.getInt("grade")
+        val result = submission.getJSONObject("response").getJSONObject("result")
         sub.error = if (result.getJSONArray("errors").length() > 0) result.getJSONArray("errors").getJSONObject(0).getString("error") else null
         val arr = result.getJSONArray("datasets")
         sub.results.clear()
@@ -126,7 +127,7 @@ object Remote {
         }
     }
 
-    fun getSubmissionObj(item: Item): JSONObject {
+    fun getSubmissionObj(item: Item, incVer: Boolean): JSONObject {
         val obj = JSONObject()
         obj.put("lti_user_id", item.lti_user_id)
         obj.put("lti_course_id", item.lti_course_id)
@@ -139,6 +140,7 @@ object Remote {
             fileobj.put("name", file.name)
             fileobj.put("content", file.stagingContent)
             fileobj.put("modified", file.content != file.stagingContent)
+            fileobj.put("version_number", file.version+if (incVer) 1 else 0)
             fileobj.put("disable_history", false)
             files.put(fileobj)
         }
@@ -146,7 +148,7 @@ object Remote {
     }
 
     fun updateFiles(token: String, item: Item) {
-        val obj = getSubmissionObj(item)
+        val obj = getSubmissionObj(item, true)
         val req = Request.Builder()
             .url("https://coderunner.projectstem.org/api/v1/problem_files/update_all")
             .header("accept", "application/json")
@@ -163,11 +165,12 @@ object Remote {
             val inputFile = item.files.find { it.name == file.getString("name") } ?: return@forEach // compare against name because id changes from -1 to an id when creating a file
             inputFile.id = file.getInt("id")
             inputFile.content = file.getString("content")
+            inputFile.version = file.getInt("version_number")
         }
     }
 
     fun createSubmission(token: String, item: Item): Submission? {
-        val createItem = getSubmissionObj(item)
+        val createItem = getSubmissionObj(item, false)
         val req = Request.Builder()
                 .url("https://coderunner.projectstem.org/api/v1/submissions")
                 .header("accept", "application/json")
@@ -196,5 +199,26 @@ object Remote {
         val json = JSONObject(res.body!!.string())
         parseSubmission(json, submission)
         return
+    }
+
+    fun gradeSubmission(submission: Submission): Boolean {
+        val obj = JSONObject()
+        obj.put("id", submission.id)
+        obj.put("lti_course_id", submission.item.lti_course_id)
+        obj.put("lti_user_id", submission.item.lti_user_id)
+        obj.put("lti_params", submission.item.ltiparams)
+        obj.put("problem_id", submission.item.problem_id)
+        val req = Request.Builder()
+            .url("https://coderunner.projectstem.org/api/v1/submissions/${submission.id}/grade")
+            .header("accept", "application/json")
+            .post(obj.toString().toRequestBody("application/json; charset=utf-8".toMediaTypeOrNull()))
+            .build()
+        val res = client.newCall(req).execute()
+        if (res.code != 200) {
+            return false
+        }
+        val json = JSONObject(res.body!!.string())
+        parseSubmission(json, submission)
+        return submission.status == "graded"
     }
 }

@@ -1,6 +1,6 @@
 package com.github.taehagen.projectstemintellij.projectmanager
 
-class File(var id: Int, var name: String, var content: String, var preferred: Boolean) {
+class File(var id: Int, var name: String, var content: String, var preferred: Boolean, var version: Int) {
     var stagingContent: String? = null
         get() {
             if (field == null)

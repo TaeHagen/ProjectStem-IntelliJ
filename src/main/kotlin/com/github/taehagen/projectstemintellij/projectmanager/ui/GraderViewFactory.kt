@@ -4,9 +4,9 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowFactory
 
-class ItemViewFactory : ToolWindowFactory {
+class GraderViewFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         UiState.init(project)
-        ItemViewPage(project, toolWindow).show()
+        GraderViewPage(project, toolWindow).show()
     }
 }

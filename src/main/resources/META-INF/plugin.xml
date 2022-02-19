@@ -11,6 +11,7 @@
         <projectService serviceImplementation="com.github.taehagen.projectstemintellij.services.MyProjectService"/>
         <toolWindow factoryClass="com.github.taehagen.projectstemintellij.projectmanager.ui.ManagerFactory" id="Project Stem" />
         <toolWindow factoryClass="com.github.taehagen.projectstemintellij.projectmanager.ui.ItemViewFactory" id="Course" />
+        <toolWindow factoryClass="com.github.taehagen.projectstemintellij.projectmanager.ui.GraderViewFactory" id="Grader" anchor="right" />
         <notificationGroup id="Status" displayType="BALLOON"/>
     </extensions>
 
