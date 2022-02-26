@@ -4,7 +4,7 @@ class User(val token: String, val name: String) {
     val courses = ArrayList<Course>()
     fun getCourses() {
         courses.clear()
-        Remote.getCourses(token, courses)
+        Remote.getCourses(this, courses)
     }
 
     fun fetchUser() {

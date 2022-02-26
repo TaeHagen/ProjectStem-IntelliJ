@@ -1,9 +1,8 @@
 package com.github.taehagen.projectstemintellij.projectmanager.ui
 
 import com.github.taehagen.projectstemintellij.DesktopApi
-import com.github.taehagen.projectstemintellij.projectmanager.AuthState
-import com.github.taehagen.projectstemintellij.projectmanager.Item
-import com.github.taehagen.projectstemintellij.projectmanager.Submission
+import com.github.taehagen.projectstemintellij.projectmanager.*
+import com.github.taehagen.projectstemintellij.runOnIoThread
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
@@ -17,17 +16,13 @@ import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.ui.layout.ComponentPredicate
 import java.awt.Color
 import java.awt.Desktop
+import java.awt.Dimension
 import java.awt.GridLayout
-import javax.swing.Box
-import javax.swing.BoxLayout
-import javax.swing.JButton
-import javax.swing.JEditorPane
-import javax.swing.JLabel
-import javax.swing.JPanel
+import javax.swing.*
 import javax.swing.event.HyperlinkEvent
 
 
-class ItemViewPage(val project: Project, val toolWindow: ToolWindow) : Page(toolWindow) {
+class ItemViewPage(val projectState: ProjectState, val toolWindow: ToolWindow) : Page(toolWindow) {
 
     val panel = JPanel()
     lateinit var item: Item
@@ -35,8 +30,8 @@ class ItemViewPage(val project: Project, val toolWindow: ToolWindow) : Page(tool
     fun processHtml(data: String): String {
         return """<html>
             <style>
-            .section-body {
-                color:white;
+            body {
+                font-family: Helvetica, sans-serif;
             }
             </style>
             ${data}
@@ -51,23 +46,23 @@ class ItemViewPage(val project: Project, val toolWindow: ToolWindow) : Page(tool
     }
 
     fun next() {
-        UiState.save {
-            UiState.runOnIoThread {
+        projectState.save {
+            runOnIoThread {
                 val next = item.next()
                 return@runOnIoThread {
-                    UiState.projectManager.selectedItem = next
+                    projectState.projectManager.selectedItem = next
                 }
             }
         }
     }
     fun prev() {
-        UiState.save {
-            UiState.runOnIoThread {
+        projectState.save {
+            runOnIoThread {
                 var next = item.prev()
                 while (next != null && !canDisplay(next))
                     next = next.prev()
                 return@runOnIoThread {
-                    UiState.projectManager.selectedItem = next
+                    projectState.projectManager.selectedItem = next
                 }
             }
         }
@@ -75,9 +70,13 @@ class ItemViewPage(val project: Project, val toolWindow: ToolWindow) : Page(tool
 
     fun updateContent() {
         panel.removeAll()
-        val item = UiState.projectManager.selectedItem
+        if (projectState.authState.user == null) {
+            panel.add(JLabel("Log on in the Project Stem panel (to the left)!"))
+            return
+        }
+        val item = projectState.projectManager.selectedItem
         if (item == null) {
-            panel.add(JLabel("Select something!"))
+            panel.add(JLabel("Select something in the Project Stem panel (to the left)!"))
             return
         }
         this.item = item
@@ -95,14 +94,17 @@ class ItemViewPage(val project: Project, val toolWindow: ToolWindow) : Page(tool
                 DesktopApi.browse(it.url.toURI())
             }
         }
+        label.background = Color(0, 0, 0, 0)
         val scroll = JBScrollPane(label)
-        scroll.border = null
+        scroll.border = BorderFactory.createEmptyBorder()
         val header = JPanel()
         header.layout = BoxLayout(header, BoxLayout.X_AXIS)
         val prev = JButton("Previous")
         prev.isEnabled = false
         header.add(prev)
-        header.add(JLabel(item.title))
+        val title = JLabel("<html><b>${item.title}</b></html>", SwingConstants.CENTER)
+        title.maximumSize = Dimension(Integer.MAX_VALUE, title.preferredSize.height)
+        header.add(title)
         val next = JButton("Next")
         next.isEnabled = false
         next.addActionListener {
@@ -118,13 +120,13 @@ class ItemViewPage(val project: Project, val toolWindow: ToolWindow) : Page(tool
         header.add(next)
         panel.add(header)
         panel.add(scroll)
-        UiState.runOnIoThread {
+        runOnIoThread {
             item.getDetails()
             return@runOnIoThread {
-                if (UiState.projectManager.selectedItem == item) {
+                if (projectState.projectManager.selectedItem == item) {
                     // we've not selected something else
                     label.text = processHtml(item.description)
-                    UiState.projectManager.openFiles()
+                    projectState.projectManager.openFiles()
                     prev.isEnabled = true
                     next.isEnabled = true
                 }
@@ -134,7 +136,8 @@ class ItemViewPage(val project: Project, val toolWindow: ToolWindow) : Page(tool
     }
 
     init {
-        UiState.projectManager.addStateChangeListener({
+        projectState.uiState.openUsefulPanes() // kick them to the other panel if they start here and are logged out
+        projectState.projectManager.addStateChangeListener({
             updateContent()
         }, unsubscribeToken)
         updateContent()

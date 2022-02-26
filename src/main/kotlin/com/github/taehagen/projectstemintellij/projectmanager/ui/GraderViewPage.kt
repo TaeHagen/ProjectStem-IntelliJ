@@ -2,6 +2,8 @@ package com.github.taehagen.projectstemintellij.projectmanager.ui
 
 import com.github.taehagen.projectstemintellij.UnsubscribeToken
 import com.github.taehagen.projectstemintellij.projectmanager.Item
+import com.github.taehagen.projectstemintellij.projectmanager.ProjectState
+import com.github.taehagen.projectstemintellij.runOnIoThread
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
@@ -15,20 +17,24 @@ import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import java.awt.GridLayout
 import java.awt.event.MouseEvent
 import java.awt.event.MouseListener
+import javax.swing.BorderFactory
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.ScrollPaneConstants
+import javax.swing.border.EmptyBorder
+import javax.swing.plaf.basic.BasicArrowButton
 
 
-class GraderViewPage(val project: Project, val toolWindow: ToolWindow) : Page(toolWindow) {
+class GraderViewPage(val projectState: ProjectState, val toolWindow: ToolWindow) : Page(toolWindow) {
     val submissionPanel = JPanel()
     val submissionInner = JPanel()
     val panel = panel {
         row {
-            cell(submissionInner)
+            submissionInner.layout = BoxLayout(submissionInner, BoxLayout.X_AXIS)
+            cell(submissionInner).horizontalAlign(HorizontalAlign.FILL)
         }
         row {
             val scroll = JBScrollPane(submissionPanel)
@@ -47,7 +53,7 @@ class GraderViewPage(val project: Project, val toolWindow: ToolWindow) : Page(to
     var refreshCounter = 0
 
     init {
-        UiState.projectManager.addStateChangeListener({
+        projectState.projectManager.addStateChangeListener({
             updateSubmissions()
         }, unsubscribeToken)
         updateSubmissions()
@@ -63,15 +69,18 @@ class GraderViewPage(val project: Project, val toolWindow: ToolWindow) : Page(to
         panel.repaint()
     }
 
-    private val itemSubscribeListener = UnsubscribeToken()
+    private var itemSubscribeListener = UnsubscribeToken()
     var lastItem: Item? = null
 
     fun updateSubmissions() {
         submissionPanel.removeAll()
         submissionInner.removeAll()
-        val item = UiState.projectManager.selectedItem ?: return
+        val item = projectState.projectManager.selectedItem ?: return
         if (lastItem != item) {
             lastItem = item
+            if (itemSubscribeListener == null) { // i know its always false right KOTLIN??????
+                itemSubscribeListener = UnsubscribeToken() // happens when this is called in init
+            }
             itemSubscribeListener.unsub()
             item.addStateChangeListener({
                 updateSubmissions()
@@ -90,8 +99,8 @@ class GraderViewPage(val project: Project, val toolWindow: ToolWindow) : Page(to
             refreshCounter = 0
             submissionPanel.removeAll()
             FileDocumentManager.getInstance().saveAllDocuments()
-            UiState.runOnIoThread {
-                UiState.projectManager.saveFiles()
+            runOnIoThread {
+                projectState.projectManager.saveFiles()
                 item.submit()
                 return@runOnIoThread {
                     updateSubmissions()
@@ -101,15 +110,16 @@ class GraderViewPage(val project: Project, val toolWindow: ToolWindow) : Page(to
         val saveBtn = JButton("Save")
         saveBtn.addActionListener {
             saveBtn.isEnabled = false
-            UiState.save {
+            projectState.save {
                 saveBtn.isEnabled = true
                 NotificationGroupManager.getInstance().getNotificationGroup("Status")
                     .createNotification("Project saved!", NotificationType.INFORMATION)
-                    .notify(project)
+                    .notify(projectState.project)
             }
         }
         if (submission == null) {
             submissionInner.add(submitBtn)
+            submissionInner.add(Box.createHorizontalGlue())
             submissionInner.add(saveBtn)
             refreshFrames()
             return
@@ -119,19 +129,22 @@ class GraderViewPage(val project: Project, val toolWindow: ToolWindow) : Page(to
         submit.isEnabled = !submission.isSubmitted() && !submission.isSubmitting()
         submit.addActionListener {
             submit.isEnabled = false
-            UiState.runOnIoThread {
+            runOnIoThread {
                 val res = submission.grade()
                 return@runOnIoThread {
                     submit.isEnabled = !submission.isSubmitted()
                     if (res)
                         NotificationGroupManager.getInstance().getNotificationGroup("Status")
                             .createNotification("Your score of ${submission.grade} was submitted!", NotificationType.INFORMATION)
-                            .notify(project)
+                            .notify(projectState.project)
                 }
             }
         }
-        submissionInner.add(JLabel("Score ${submission.grade}%"))
+        val label = JLabel("<html>Score <b>${submission.grade}%</b></html>")
+        label.maximumSize = label.preferredSize
+        submissionInner.add(label)
         submissionInner.add(submitBtn)
+        submissionInner.add(Box.createHorizontalGlue())
         submissionInner.add(saveBtn)
         submissionInner.add(submit)
         if (submission.error != null) {
@@ -166,21 +179,29 @@ class GraderViewPage(val project: Project, val toolWindow: ToolWindow) : Page(to
         for ((index, result) in submission.results.withIndex()) {
             val resultItem = JPanel()
             resultItem.layout = BoxLayout(resultItem, BoxLayout.Y_AXIS)
-            val label = JLabel("Test ${index+1} - ${if (result.passed) "Pass" else "Fail"}")
+            resultItem.border = EmptyBorder(10, 0, 10, 0)
+            val label = JLabel()
             resultItem.add(label)
             var showing = false
+            val update = {
+                label.text = "<html>Test ${index+1} - <b style=\"color: #${if (result.passed) "c9e1a7" else "ffc7ba"};\">${if (result.passed) "Pass" else "Fail"}</b>&nbsp;&nbsp;&nbsp;<b>${if (showing) "\u25be" else "\u25b8"}</b></html>"
+            }
+            update()
             // i am so done with this JSL ui. HTML is so much better and well documented.
             val details = JLabel("""<html>
-                    <div>Description</div>
+                    <br>
+                    <div><b>Description</b></div>
                     <div>${result.description}</div>
-                    <div>Message</div>
+                    <br>
+                    <div><b>Message</b></div>
                     <div>${if (result.passed) "Correct!" else result.debug_hint}</div>
-                    ${result.examples.withIndex().joinToString("") {
+                    ${if (result.examples.size > 0) "<br>" else ""}
+                    ${result.examples.withIndex().joinToString("<br>") {
                     """<div style="padding-left: 10px">
-                        <div>Test ${it.index+1}</div>
-                        <div>Expected</div>
+                        <div><b>Test ${it.index+1}</b></div>
+                        <div><b>Expected</b></div>
                         <div>${it.value.expected}</div>
-                        <div>Found</div>
+                        <div><b>Found</b></div>
                         <div>${it.value.found}</div>
                     </div>""".trimIndent()
                     }}
@@ -194,6 +215,7 @@ class GraderViewPage(val project: Project, val toolWindow: ToolWindow) : Page(to
                     }
                     showing = !showing
                     refreshFrames()
+                    update()
                 }
                 override fun mousePressed(p0: MouseEvent?) {}
                 override fun mouseReleased(p0: MouseEvent?) {}

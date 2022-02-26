@@ -1,43 +1,24 @@
 package com.github.taehagen.projectstemintellij.projectmanager.ui
 
 import com.github.taehagen.projectstemintellij.Stateful
+import com.github.taehagen.projectstemintellij.projectmanager.AuthState
 import com.github.taehagen.projectstemintellij.projectmanager.ProjectManager
+import com.github.taehagen.projectstemintellij.projectmanager.ProjectState
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.wm.ToolWindowManager
 
-object UiState : Stateful() {
-    lateinit var projectManager: ProjectManager;
+class UiState(val projectState: ProjectState) : Stateful() {
 
-    fun init(project: Project) {
-        if (this::projectManager.isInitialized)
-            return
-        projectManager = ProjectManager(project)
-    }
-
-    fun runOnIoThread(task: () -> () -> Unit) {
-        Thread {
-            val ret = task()
-            ApplicationManager.getApplication().invokeLater {
-                ret()
-            }
-        }.start()
-    }
-
-    fun save(success: () -> Unit) {
-        FileDocumentManager.getInstance().saveAllDocuments()
-        runOnIoThread {
-            val status = UiState.projectManager.saveFiles()
-            return@runOnIoThread {
-                if (status)
-                    success()
-                else
-                    NotificationGroupManager.getInstance().getNotificationGroup("Status")
-                        .createNotification("Error saving... don't close IDE", NotificationType.ERROR)
-                        .notify(projectManager.project)
-            }
+    fun openUsefulPanes() {
+        if (projectState.authState.loginInProgress || projectState.authState.user == null) {
+            ToolWindowManager.getInstance(projectState.projectManager.project).getToolWindow("Project Stem")?.show(null)
+        } else {
+            ToolWindowManager.getInstance(projectState.projectManager.project).getToolWindow("Course")?.show(null)
         }
+        ToolWindowManager.getInstance(projectState.projectManager.project).getToolWindow("Grader")?.show(null)
     }
 }

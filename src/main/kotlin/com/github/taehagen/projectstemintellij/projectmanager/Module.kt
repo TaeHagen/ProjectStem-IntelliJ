@@ -1,12 +1,12 @@
 package com.github.taehagen.projectstemintellij.projectmanager
 
-class Module(val id: Int, val name: String, val state: String, val course: Course) {
+class Module(val user: User, val id: Int, val name: String, val state: String, val course: Course) {
     val items = ArrayList<Item>()
     fun getItems(refresh: Boolean = false): ArrayList<Item> {
         if (items.size != 0 && !refresh)
             return items
         items.clear()
-        Remote.getItems(AuthState.user!!.token, this, items)
+        Remote.getItems(user, this, items)
         return items
     }
 

@@ -1,9 +1,7 @@
 package com.github.taehagen.projectstemintellij.projectmanager.ui
 
-import com.github.taehagen.projectstemintellij.projectmanager.AuthState
-import com.github.taehagen.projectstemintellij.projectmanager.Course
-import com.github.taehagen.projectstemintellij.projectmanager.Item
-import com.github.taehagen.projectstemintellij.projectmanager.Module
+import com.github.taehagen.projectstemintellij.projectmanager.*
+import com.github.taehagen.projectstemintellij.runOnIoThread
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
@@ -19,6 +17,7 @@ import com.intellij.ui.treeStructure.Tree
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseListener
+import javax.swing.BorderFactory
 import javax.swing.JPanel
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
@@ -26,7 +25,7 @@ import javax.swing.tree.DefaultTreeModel
 
 class CourseTreeNode(text: String, val data: Any) : DefaultMutableTreeNode(text) {}
 
-class MainPage(val project: Project, val toolWindow: ToolWindow) : Page(toolWindow) {
+class MainPage(val projectState: ProjectState, val toolWindow: ToolWindow) : Page(toolWindow) {
     fun updateItems(selected: CourseTreeNode) {
         val data = selected.data
         if (data is Course) {
@@ -52,13 +51,13 @@ class MainPage(val project: Project, val toolWindow: ToolWindow) : Page(toolWind
     }
 
     override fun getContent(): JPanel {
-        val user = AuthState.user!!
+        val user = projectState.authState.user!!
         return panel {
             row("Name: ") {
                 label(user.name)
                 button("Logout") {
-                    AuthState.user = null
-                    UiState.projectManager.selectedItem = null
+                    projectState.authState.user = null
+                    projectState.projectManager.selectedItem = null
                 }.horizontalAlign(HorizontalAlign.RIGHT)
             }
             for (course in user.courses) {
@@ -66,7 +65,7 @@ class MainPage(val project: Project, val toolWindow: ToolWindow) : Page(toolWind
                     val node = CourseTreeNode(course.name, course)
                     val tree = Tree(node)
                     val pane = JBScrollPane(tree)
-                    pane.border = null
+                    pane.border = BorderFactory.createEmptyBorder()
                     cell(pane).horizontalAlign(HorizontalAlign.FILL).verticalAlign(VerticalAlign.FILL)
                     val updateAndReload = { node: CourseTreeNode, update: () -> Unit ->
                         Thread {
@@ -99,17 +98,17 @@ class MainPage(val project: Project, val toolWindow: ToolWindow) : Page(toolWind
 
                                     // save first!
                                     FileDocumentManager.getInstance().saveAllDocuments()
-                                    UiState.runOnIoThread {
-                                        val status = UiState.projectManager.saveFiles()
+                                    runOnIoThread {
+                                        val status = projectState.projectManager.saveFiles()
                                         return@runOnIoThread {
                                             if (status) {
-                                                UiState.projectManager.selectedItem = data
-                                                ToolWindowManager.getInstance(project).getToolWindow("Course")
+                                                projectState.projectManager.selectedItem = data
+                                                ToolWindowManager.getInstance(projectState.project).getToolWindow("Course")
                                                     ?.show(null)
                                             } else
                                                 NotificationGroupManager.getInstance().getNotificationGroup("Status")
                                                     .createNotification("Error saving... don't close IDE", NotificationType.ERROR)
-                                                    .notify(project)
+                                                    .notify(projectState.project)
                                         }
                                     }
 

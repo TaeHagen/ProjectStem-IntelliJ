@@ -1,6 +1,9 @@
 package com.github.taehagen.projectstemintellij.projectmanager
 
 import com.github.taehagen.projectstemintellij.Stateful
+import com.intellij.execution.RunManager
+import com.intellij.execution.configurations.ConfigurationType
+import com.intellij.execution.configurations.RunConfiguration
 import com.intellij.lang.Language
 import com.intellij.mock.MockVirtualFile.dir
 import com.intellij.openapi.application.ApplicationManager
@@ -67,5 +70,7 @@ class ProjectManager(val project: Project) : Stateful() {
             fem.openFile(vf, file.preferred)
             openFiles.add(vf)
         }
+
+        // TODO: Create and manage run configurations here
     }
 }

@@ -3,7 +3,7 @@ package com.github.taehagen.projectstemintellij.projectmanager
 import com.github.taehagen.projectstemintellij.Stateful
 import org.json.JSONObject
 
-class Item(val id: Int,
+class Item(val user: User, val id: Int,
            val title: String,
            val type: String,
            val url: String?,
@@ -32,7 +32,7 @@ class Item(val id: Int,
             return
         }
         if (url == null) return
-        PageParser.parseAssignment(url, AuthState.user!!.token, this)
+        PageParser.parseAssignment(url, user.token, this)
         stateChanged()
     }
 
@@ -40,12 +40,12 @@ class Item(val id: Int,
         if (!files.any { it.dirty }) {
             return true // no files dirty
         }
-        Remote.updateFiles(AuthState.user!!.token, this)
+        Remote.updateFiles(user.token, this)
         return !files.any { it.dirty } // if files are still dirty, we failed.
     }
 
     fun submit(): Boolean {
-        return Remote.createSubmission(AuthState.user!!.token, this) != null
+        return Remote.createSubmission(user.token, this) != null
 
     }
 
