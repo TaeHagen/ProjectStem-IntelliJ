@@ -53,6 +53,7 @@ class GraderViewPage(val projectState: ProjectState, val toolWindow: ToolWindow)
     var refreshCounter = 0
 
     init {
+        panel.border = EmptyBorder(3, 5, 5, 5)
         projectState.projectManager.addStateChangeListener({
             updateSubmissions()
         }, unsubscribeToken)
@@ -144,9 +145,9 @@ class GraderViewPage(val projectState: ProjectState, val toolWindow: ToolWindow)
         label.maximumSize = label.preferredSize
         submissionInner.add(label)
         submissionInner.add(submitBtn)
+        submissionInner.add(submit)
         submissionInner.add(Box.createHorizontalGlue())
         submissionInner.add(saveBtn)
-        submissionInner.add(submit)
         if (submission.error != null) {
             submissionPanel.add(panel {
                 group("Error") {

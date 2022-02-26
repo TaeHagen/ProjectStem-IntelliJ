@@ -19,6 +19,7 @@ import java.awt.event.MouseEvent
 import java.awt.event.MouseListener
 import javax.swing.BorderFactory
 import javax.swing.JPanel
+import javax.swing.border.EmptyBorder
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 
@@ -52,7 +53,7 @@ class MainPage(val projectState: ProjectState, val toolWindow: ToolWindow) : Pag
 
     override fun getContent(): JPanel {
         val user = projectState.authState.user!!
-        return panel {
+        val panel = panel {
             row("Name: ") {
                 label(user.name)
                 button("Logout") {
@@ -121,6 +122,8 @@ class MainPage(val projectState: ProjectState, val toolWindow: ToolWindow) : Pag
                 }.resizableRow()
             }
         }
+        panel.border = EmptyBorder(1, 5, 5, 5)
+        return panel
     }
 
 }

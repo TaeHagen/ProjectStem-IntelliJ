@@ -17,10 +17,12 @@ import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTextField
+import javax.swing.border.EmptyBorder
 
 class LoginPage(val projectState: ProjectState, val toolWindow: ToolWindow) : Page(toolWindow) {
     override fun getContent(): JPanel {
         val panel = JPanel()
+        panel.border = EmptyBorder(3, 5, 5, 5)
         panel.layout = GridBagLayout()
         val const = GridBagConstraints()
         const.fill = GridBagConstraints.HORIZONTAL

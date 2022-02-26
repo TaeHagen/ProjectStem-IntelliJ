@@ -19,6 +19,7 @@ import java.awt.Desktop
 import java.awt.Dimension
 import java.awt.GridLayout
 import javax.swing.*
+import javax.swing.border.EmptyBorder
 import javax.swing.event.HyperlinkEvent
 
 
@@ -83,6 +84,7 @@ class ItemViewPage(val projectState: ProjectState, val toolWindow: ToolWindow) :
         if (!canDisplay()) {
             next()
         }
+        panel.border = EmptyBorder(3, 5, 5, 5)
         panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
         val label = JEditorPane("text/html", processHtml(item.description))
         label.isEditable = false
