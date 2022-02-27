@@ -1,21 +1,18 @@
 package com.github.taehagen.projectstemintellij.projectmanager
 
 import com.github.taehagen.projectstemintellij.Stateful
+import com.github.taehagen.projectstemintellij.runOnIoThread
 import com.intellij.execution.RunManager
-import com.intellij.execution.configurations.ConfigurationType
-import com.intellij.execution.configurations.RunConfiguration
-import com.intellij.lang.Language
-import com.intellij.mock.MockVirtualFile.dir
+import com.intellij.execution.application.ApplicationConfiguration
+import com.intellij.execution.application.ApplicationConfigurationType
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
-import com.intellij.psi.PsiDirectory
-import com.intellij.psi.PsiFileFactory
-import com.intellij.psi.impl.file.PsiDirectoryFactory
+import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiManager
 import java.io.PrintWriter
 import java.nio.file.Paths
 
@@ -70,7 +67,35 @@ class ProjectManager(val project: Project) : Stateful() {
             fem.openFile(vf, file.preferred)
             openFiles.add(vf)
         }
+        DumbService.getInstance(project).smartInvokeLater {
+            updateConfigs() // invoke after index update
+        }
+    }
 
-        // TODO: Create and manage run configurations here
+    fun updateConfigs() {
+        val item = selectedItem ?: return
+        var mainClass: PsiClass? = null
+        for (vf in openFiles) {
+            val psi = PsiManager.getInstance(project).findFile(vf)
+            if (psi != null) {
+                val main = ApplicationConfigurationType.getMainClass(psi)
+                if (main != null)
+                    mainClass = main
+            }
+        }
+        if (mainClass != null) {
+            val runManager = RunManager.getInstance(project)
+            for (conf in runManager.allSettings)
+                runManager.removeConfiguration(conf)
+
+            val conf = ApplicationConfiguration(item.title, project)
+            conf.setMainClass(mainClass)
+            val createdConf = runManager.createConfiguration(
+                conf,
+                ApplicationConfigurationType.getInstance().configurationFactories[0]
+            )
+            runManager.addConfiguration(createdConf)
+            runManager.selectedConfiguration = createdConf
+        }
     }
 }
