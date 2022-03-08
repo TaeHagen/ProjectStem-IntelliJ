@@ -3,6 +3,7 @@ package com.github.taehagen.projectstemintellij.projectmanager.ui
 import com.github.taehagen.projectstemintellij.DesktopApi
 import com.github.taehagen.projectstemintellij.projectmanager.*
 import com.github.taehagen.projectstemintellij.runOnIoThread
+import com.intellij.application.options.colors.ColorAndFontOptions
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
@@ -89,14 +90,12 @@ class ItemViewPage(val projectState: ProjectState, val toolWindow: ToolWindow) :
         val label = JEditorPane("text/html", processHtml(item.description))
         label.isEditable = false
         label.border = null
-        label.background = null
-        label.isOpaque = false
         label.addHyperlinkListener {
             if (HyperlinkEvent.EventType.ACTIVATED.equals(it.eventType)) {
                 DesktopApi.browse(it.url.toURI())
             }
         }
-        label.background = Color(0, 0, 0, 0)
+        label.background = Color(60, 63, 65, 255) //i hate undocumented APIs
         val scroll = JBScrollPane(label)
         scroll.border = BorderFactory.createEmptyBorder()
         val header = JPanel()

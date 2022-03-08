@@ -13,6 +13,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiManager
+import java.io.IOException
 import java.io.PrintWriter
 import java.nio.file.Paths
 
@@ -45,7 +46,11 @@ class ProjectManager(val project: Project) : Stateful() {
         for (file in fem.openFiles) {
             fem.closeFile(file)
             ApplicationManager.getApplication().runWriteAction {
-                file.delete(null)
+                try {
+                    file.delete(null)
+                } catch (e: IOException) {
+                    // we don't care lol
+                }
             }
         }
         val courseDir = Paths.get(project.basePath, "src").toFile()
