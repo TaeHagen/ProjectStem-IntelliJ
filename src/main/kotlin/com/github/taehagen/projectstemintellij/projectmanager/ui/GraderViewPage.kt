@@ -70,7 +70,7 @@ class GraderViewPage(val projectState: ProjectState, val toolWindow: ToolWindow)
         panel.repaint()
     }
 
-    private var itemSubscribeListener = UnsubscribeToken()
+    private var itemSubscribeListener: UnsubscribeToken? = UnsubscribeToken()
     var lastItem: Item? = null
 
     fun updateSubmissions() {
@@ -79,13 +79,13 @@ class GraderViewPage(val projectState: ProjectState, val toolWindow: ToolWindow)
         val item = projectState.projectManager.selectedItem ?: return
         if (lastItem != item) {
             lastItem = item
-            if (itemSubscribeListener == null) { // i know its always false right KOTLIN??????
+            if (itemSubscribeListener == null) {
                 itemSubscribeListener = UnsubscribeToken() // happens when this is called in init
             }
-            itemSubscribeListener.unsub()
+            itemSubscribeListener?.unsub()
             item.addStateChangeListener({
                 updateSubmissions()
-            }, itemSubscribeListener)
+            }, itemSubscribeListener!!)
         }
         if (!item.hasDetails())
             return // come back later
@@ -181,11 +181,11 @@ class GraderViewPage(val projectState: ProjectState, val toolWindow: ToolWindow)
             val resultItem = JPanel()
             resultItem.layout = BoxLayout(resultItem, BoxLayout.Y_AXIS)
             resultItem.border = EmptyBorder(10, 0, 10, 0)
-            val label = JLabel()
-            resultItem.add(label)
+            val lbl = JLabel()
+            resultItem.add(lbl)
             var showing = false
             val update = {
-                label.text = "<html>Test ${index+1} - <b style=\"color: #${if (result.passed) "c9e1a7" else "ffc7ba"};\">${if (result.passed) "Pass" else "Fail"}</b>&nbsp;&nbsp;&nbsp;<b>${if (showing) "\u25be" else "\u25b8"}</b></html>"
+                lbl.text = "<html>Test ${index+1} - <b style=\"color: #${if (result.passed) "c9e1a7" else "ffc7ba"};\">${if (result.passed) "Pass" else "Fail"}</b>&nbsp;&nbsp;&nbsp;<b>${if (showing) "\u25be" else "\u25b8"}</b></html>"
             }
             update()
             // i am so done with this JSL ui. HTML is so much better and well documented.
@@ -207,7 +207,7 @@ class GraderViewPage(val projectState: ProjectState, val toolWindow: ToolWindow)
                     </div>""".trimIndent()
                     }}
                 </html>""".trimMargin())
-            label.addMouseListener(object : MouseListener {
+            lbl.addMouseListener(object : MouseListener {
                 override fun mouseClicked(p0: MouseEvent?) {
                     if (showing) {
                         resultItem.remove(details)

@@ -153,7 +153,7 @@ object Remote {
         return obj
     }
 
-    fun updateFiles(token: String, item: Item) {
+    fun updateFiles(item: Item) {
         val obj = getSubmissionObj(item, true)
         val req = Request.Builder()
             .url("https://coderunner.projectstem.org/api/v1/problem_files/update_all")
@@ -176,7 +176,7 @@ object Remote {
         }
     }
 
-    fun createSubmission(token: String, item: Item): Submission? {
+    fun createSubmission(item: Item): Submission? {
         val createItem = getSubmissionObj(item, false)
         val req = Request.Builder()
                 .url("https://coderunner.projectstem.org/api/v1/submissions")

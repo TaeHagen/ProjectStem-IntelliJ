@@ -68,12 +68,12 @@ class MainPage(val projectState: ProjectState, val toolWindow: ToolWindow) : Pag
                     val pane = JBScrollPane(tree)
                     pane.border = BorderFactory.createEmptyBorder()
                     cell(pane).horizontalAlign(HorizontalAlign.FILL).verticalAlign(VerticalAlign.FILL)
-                    val updateAndReload = { node: CourseTreeNode, update: () -> Unit ->
+                    val updateAndReload = { nde: CourseTreeNode, update: () -> Unit ->
                         Thread {
                             update()
                             ApplicationManager.getApplication().invokeLater() {
-                                updateItems(node)
-                                (tree.model as DefaultTreeModel).reload(node)
+                                updateItems(nde)
+                                (tree.model as DefaultTreeModel).reload(nde)
                             }
                         }.start()
                     }

@@ -128,8 +128,8 @@ object DesktopApi {
         parts.add(command)
         if (args != null) {
             for (s in args.split(" ").toTypedArray()) {
-                val s = String.format(s, file) // put in the filename thing
-                parts.add(s.trim { it <= ' ' })
+                val prp = String.format(s, file) // put in the filename thing
+                parts.add(prp.trim { it <= ' ' })
             }
         }
         return parts.toTypedArray()
@@ -150,7 +150,7 @@ object DesktopApi {
 
     val os: EnumOS
         get() {
-            val s = System.getProperty("os.name").toLowerCase()
+            val s = System.getProperty("os.name").lowercase()
             if (s.contains("win")) {
                 return EnumOS.windows
             }

@@ -40,12 +40,12 @@ class Item(val user: User, val id: Int,
         if (!files.any { it.dirty }) {
             return true // no files dirty
         }
-        Remote.updateFiles(user.token, this)
+        Remote.updateFiles(this)
         return !files.any { it.dirty } // if files are still dirty, we failed.
     }
 
     fun submit(): Boolean {
-        return Remote.createSubmission(user.token, this) != null
+        return Remote.createSubmission(this) != null
 
     }
 
