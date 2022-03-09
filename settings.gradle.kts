@@ -1,1 +1,1 @@
-rootProject.name = "ProjectStem-IntelliJ"
+rootProject.name = "ProjectStem-Idea"
