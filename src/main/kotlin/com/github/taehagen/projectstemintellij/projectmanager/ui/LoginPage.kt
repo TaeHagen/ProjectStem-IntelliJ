@@ -1,22 +1,17 @@
 package com.github.taehagen.projectstemintellij.projectmanager.ui
 
-import com.github.taehagen.projectstemintellij.projectmanager.AuthState
 import com.github.taehagen.projectstemintellij.projectmanager.ProjectState
 import com.github.taehagen.projectstemintellij.projectmanager.Remote
 import com.github.taehagen.projectstemintellij.runOnIoThread
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.components.JBTextField
-import java.awt.Dimension
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
-import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
-import javax.swing.JTextField
 import javax.swing.border.EmptyBorder
 
 class LoginPage(val projectState: ProjectState, val toolWindow: ToolWindow) : Page(toolWindow) {
@@ -45,13 +40,19 @@ class LoginPage(val projectState: ProjectState, val toolWindow: ToolWindow) : Pa
                 if (data != null) {
                     projectState.authState.user = data
                     data.fetchUser()
-                    if (data.courses.size == 1) {
-                        val working = data.courses[0].fetchWorking()
-                        if (working != null) {
-                            projectState.projectManager.selectedItem = working
-                            ApplicationManager.getApplication().invokeLater() {
-                                ToolWindowManager.getInstance(projectState.project).getToolWindow("Course")?.show(null)
+                    if (!projectState.projectManager.restoreState(data)) {
+                        if (data.courses.size == 1) {
+                            val working = data.courses[0].fetchWorking()
+                            if (working != null) {
+                                projectState.projectManager.selectedItem = working
+                                ApplicationManager.getApplication().invokeLater() {
+                                    ToolWindowManager.getInstance(projectState.project).getToolWindow("Course")?.show(null)
+                                }
                             }
+                        }
+                    } else {
+                        ApplicationManager.getApplication().invokeLater() {
+                            ToolWindowManager.getInstance(projectState.project).getToolWindow("Course")?.show(null)
                         }
                     }
                 }
