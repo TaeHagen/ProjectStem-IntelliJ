@@ -172,6 +172,7 @@ object Remote {
             val inputFile = item.files.find { it.name == file.getString("name") } ?: return@forEach // compare against name because id changes from -1 to an id when creating a file
             inputFile.id = file.getInt("id")
             inputFile.content = file.getString("content")
+            inputFile.stagingContent = inputFile.content // shouldn't be necessary, but is in edge cases
             inputFile.version = file.getInt("version_number")
         }
     }

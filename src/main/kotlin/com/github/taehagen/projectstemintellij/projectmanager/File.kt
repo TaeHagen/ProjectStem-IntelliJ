@@ -10,6 +10,6 @@ class File(var id: Int, var name: String, var content: String, var preferred: Bo
 
     val dirty: Boolean
         get() {
-            return stagingContent != content
+            return stagingContent?.trim() != content.trim()
         }
 }
